@@ -5,7 +5,7 @@
 [![CI](https://github.com/VladimirMikulic/route-list/actions/workflows/ci.yml/badge.svg)](https://github.com/VladimirMikulic/route-list/actions)
 [![Twitter: VladoDev](https://img.shields.io/twitter/follow/VladoDev.svg?style=social)](https://twitter.com/VladoDev)
 
-> ✨ Beautifully shows Express/Koa/Hapi/Fastify routes in CLI.
+> ✨ Beautifully shows Express/Koa/Hapi/Fastify/Next.js routes in CLI.
 
 ![route-list CLI example](./screenshots/showcase.png)
 
@@ -18,6 +18,7 @@ npm i route-list -g
 
 ## 🔌 Configuration
 
+### Traditional Frameworks
 Before you can use `route-list` on your project, we first need to make sure it's configured properly.
 In order for `route-list` to work, we need to export server "app".
 The example below is for Express but it also applies to Koa (with @koa/router)/Hapi/Fastify.
@@ -44,6 +45,20 @@ app.get('/products/:id', (req, res) => res.sendStatus(200));
 
 > NOTE: In case you use [SocketIO with Express](https://socket.io/get-started/chat#the-web-framework), make sure to **export Express app**, not `http.createServer` server instance.
 
+### Next.js App Router
+For Next.js applications using the App Router (13+), `route-list` will automatically detect and list your API routes. Your API routes should follow Next.js conventions:
+
+**app/api/users/route.ts**
+```ts
+export async function GET(request: Request) {
+  return new Response('GET users');
+}
+
+export async function POST(request: Request) {
+  return new Response('Create user');
+}
+```
+
 ## ☁️ Usage
 
 ### Options
@@ -56,15 +71,15 @@ app.get('/products/:id', (req, res) => res.sendStatus(200));
 ### Examples
 
 ```sh
+# Traditional frameworks (Express, Koa, Hapi, Fastify)
 route-list server/app.js
-```
-
-```sh
 route-list --group server/app.js
-```
-
-```sh
 route-list --methods GET,POST server/app.js
+
+# Next.js App Router (13+)
+route-list app/api                        # List all API routes
+route-list app/api --group                # Group API routes by path
+route-list app/api --methods GET,POST     # Show only GET and POST routes
 ```
 
 > NOTE: In case an app is part of NX monorepo, make sure to build it first.
@@ -74,12 +89,40 @@ route-list --methods GET,POST server/app.js
 ```js
 import RouteList from 'route-list';
 
-// Example result { "/": ["GET"], "/users": ["GET", "POST"] }
+// For traditional frameworks
 const routesMap = RouteList.getRoutes(app, 'express');
+// Example result: { "/": ["GET"], "/users": ["GET", "POST"] }
+
+// For Next.js
+const routesMap = RouteList.getRoutes('app/api', 'next');
+// Example result: { "/users": ["GET", "POST"], "/users/:id": ["GET", "PUT"] }
 
 // Print routes to console
 RouteList.printRoutes(routesMap);
 ```
+
+## 🚀 Framework Support
+
+### Traditional Frameworks
+- Express
+- Koa (with @koa/router or koa-router)
+- Hapi
+- Fastify
+
+### Next.js
+- Supports Next.js 13+ (App Router)
+- Automatically detects API routes in app/api directory
+- Supports dynamic routes ([param] -> :param)
+- Detects HTTP methods from route handlers
+- Example structure:
+  ```
+  app/
+  └── api/
+      ├── users/
+      │   └── route.ts      # GET, POST /users
+      └── users/[id]/
+          └── route.ts      # GET, PUT /users/:id
+  ```
 
 ## 👨 Author
 

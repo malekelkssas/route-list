@@ -1,10 +1,14 @@
 import _getExpressRoutes from 'express-list-endpoints';
+import fs from 'fs';
+import path from 'path';
+import { EXPRESS_FRAMEWORK, FASTIFY_FRAMEWORK, HAPI_FRAMEWORK, KOA_FRAMEWORK, NEXT_FRAMEWORK } from './constants.js';
 
 export const getRoutes = (app, frameworkName) => {
-  if (frameworkName === 'express') return getExpressRoutes(app);
-  if (frameworkName === 'koa') return getKoaRoutes(app);
-  if (frameworkName === 'hapi') return getHapiRoutes(app);
-  if (frameworkName === 'fastify') return getFastifyRoutes(app);
+  if (frameworkName === NEXT_FRAMEWORK) return getNextRoutes(app);
+  if (frameworkName === EXPRESS_FRAMEWORK) return getExpressRoutes(app);
+  if (frameworkName === KOA_FRAMEWORK) return getKoaRoutes(app);
+  if (frameworkName === HAPI_FRAMEWORK) return getHapiRoutes(app);
+  if (frameworkName === FASTIFY_FRAMEWORK) return getFastifyRoutes(app);
 };
 
 const getExpressRoutes = app =>
@@ -97,5 +101,61 @@ const getFastifyRoutes = app => {
       return routesMap;
     }, {});
 
+  return routesMap;
+};
+
+const getNextRoutes = (appDir) => {
+  const routesMap = {};
+  const apiDir = appDir;
+  console.log('Looking for API routes in:', apiDir);
+  
+  function processDirectory(currentPath, parentRoute = '') {
+    console.log('Processing directory:', currentPath);
+    const items = fs.readdirSync(currentPath);
+    console.log('Found items:', items);
+    
+    for (const item of items) {
+      const fullPath = path.join(currentPath, item);
+      const stats = fs.statSync(fullPath);
+      
+      if (stats.isDirectory()) {
+        // Skip special Next.js directories
+        if (['_app', '_document'].includes(item)) continue;
+        
+        // Handle dynamic routes [param]
+        const routePart = item.startsWith('[') ? `:${item.slice(1, -1)}` : item;
+        
+        // Process nested routes
+        processDirectory(fullPath, `${parentRoute}/${routePart}`);
+      } else if (stats.isFile()) {
+        if (['route.js', 'route.tsx', 'route.ts'].includes(item)) {
+          // No need to add /api prefix since we're already in the api directory
+          const route = parentRoute || '/';
+          console.log('Found route file:', fullPath);
+          // Read the file content to detect HTTP methods
+          const content = fs.readFileSync(fullPath, 'utf8');
+          const methods = [];
+          
+          // Check for exported HTTP methods
+          if (content.includes('export const GET') || content.includes('export async function GET')) methods.push('GET');
+          if (content.includes('export const POST') || content.includes('export async function POST')) methods.push('POST');
+          if (content.includes('export const PUT') || content.includes('export async function PUT')) methods.push('PUT');
+          if (content.includes('export const DELETE') || content.includes('export async function DELETE')) methods.push('DELETE');
+          if (content.includes('export const PATCH') || content.includes('export async function PATCH')) methods.push('PATCH');
+          
+          console.log('Detected methods:', methods);
+          routesMap[route] = methods;
+        }
+      }
+    }
+  }
+
+  if (fs.existsSync(apiDir)) {
+    processDirectory(apiDir);
+  } else {
+    console.log('API directory not found:', apiDir);
+  }
+
+  console.log('Final routesMap:', routesMap);
   return routesMap;
 };
