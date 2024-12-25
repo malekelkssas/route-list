@@ -107,12 +107,9 @@ const getFastifyRoutes = app => {
 const getNextRoutes = (appDir) => {
   const routesMap = {};
   const apiDir = appDir;
-  console.log('Looking for API routes in:', apiDir);
   
   function processDirectory(currentPath, parentRoute = '') {
-    console.log('Processing directory:', currentPath);
     const items = fs.readdirSync(currentPath);
-    console.log('Found items:', items);
     
     for (const item of items) {
       const fullPath = path.join(currentPath, item);
@@ -131,7 +128,6 @@ const getNextRoutes = (appDir) => {
         if (['route.js', 'route.tsx', 'route.ts'].includes(item)) {
           // No need to add /api prefix since we're already in the api directory
           const route = parentRoute || '/';
-          console.log('Found route file:', fullPath);
           // Read the file content to detect HTTP methods
           const content = fs.readFileSync(fullPath, 'utf8');
           const methods = [];
@@ -143,7 +139,6 @@ const getNextRoutes = (appDir) => {
           if (content.includes('export const DELETE') || content.includes('export async function DELETE')) methods.push('DELETE');
           if (content.includes('export const PATCH') || content.includes('export async function PATCH')) methods.push('PATCH');
           
-          console.log('Detected methods:', methods);
           routesMap[route] = methods;
         }
       }
@@ -152,10 +147,7 @@ const getNextRoutes = (appDir) => {
 
   if (fs.existsSync(apiDir)) {
     processDirectory(apiDir);
-  } else {
-    console.log('API directory not found:', apiDir);
   }
 
-  console.log('Final routesMap:', routesMap);
   return routesMap;
 };

@@ -11,8 +11,6 @@ const __dirname = path.dirname(__filename);
 const MOCK_NEXT_APP_PATH = path.join(__dirname, 'fixtures/next-app/app/api');
 
 test('Next.js Routes', () => {
-  console.log('Test directory:', MOCK_NEXT_APP_PATH);
-  console.log('API directory exists:', fs.existsSync(path.join(MOCK_NEXT_APP_PATH, 'api')));
   
   const actualRoutesMap = getRoutes(MOCK_NEXT_APP_PATH, "next");
   const expectedRoutesMap = {
